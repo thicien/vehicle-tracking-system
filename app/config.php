@@ -10,7 +10,8 @@ if (session_status() == PHP_SESSION_NONE) {
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'rwanda_bus_booking');
 define('DB_USER', 'root');
-define('DB_PASS', 'your_strong_password'); 
+// FIX: Using an empty password for default XAMPP MySQL root user.
+define('DB_PASS', ''); 
 
 /**
  * Creates and returns a secure PDO database connection object.
@@ -35,6 +36,7 @@ function connectDB() {
 
 // 3. Redirection Helper
 function redirectUser($role) {
+    // This is the correct relative path for files inside /app to reach /public dashboards
     switch ($role) {
         case 'admin':
             header('Location: ../public/dashboard_admin.php');
@@ -52,7 +54,8 @@ function redirectUser($role) {
 // Function to check if a user is logged in
 function checkAuth($requiredRole = null) {
     if (!isset($_SESSION['logged_in'])) {
-        header('Location: index.php');
+        // Redirects to the index.php in the public folder
+        header('Location: index.php'); 
         exit();
     }
     if ($requiredRole && $_SESSION['role'] !== $requiredRole) {
