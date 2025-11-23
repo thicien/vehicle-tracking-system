@@ -58,8 +58,7 @@ function checkAuth($requiredRole = null) {
         header('Location: index.php'); 
         exit();
     }
-    if ($requiredRole && $_SESSION['role'] !== $requiredRole) {
-        // Redirect to their assigned dashboard if they try to access another role's page
+    if ($requiredRole && $_SESSION['role'] !== $requiredRole) 
         redirectUser($_SESSION['role']); 
     }
 }

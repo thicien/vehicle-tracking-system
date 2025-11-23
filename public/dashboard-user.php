@@ -1,8 +1,6 @@
 <?php
-// /public/dashboard_user.php
 require_once '../app/config.php';
 $pdo = connectDB();
-// Enforce security: only logged-in users can view this page
 checkAuth('user'); 
 
 $userId = $_SESSION['user_id'];
@@ -10,8 +8,6 @@ $username = $_SESSION['username'];
 $tickets = [];
 $schedules = [];
 $routesList = $pdo->query("SELECT DISTINCT departure_city FROM routes UNION SELECT DISTINCT arrival_city FROM routes")->fetchAll(PDO::FETCH_COLUMN);
-
-// --- 1. Fetch User's Tickets ---
 try {
     $stmt = $pdo->prepare("
         SELECT 
@@ -29,11 +25,9 @@ try {
     $tickets = $stmt->fetchAll();
 } catch (\PDOException $e) {
     error_log("Error fetching user tickets: " . $e->getMessage());
-    // Optionally set an error message for the user:
     $_SESSION['error'] = "Could not load your bookings. Database error.";
 }
 
-// --- 2. Handle Schedule Search ---
 $departure = filter_input(INPUT_GET, 'departure_city', FILTER_SANITIZE_SPECIAL_CHARS);
 $arrival = filter_input(INPUT_GET, 'arrival_city', FILTER_SANITIZE_SPECIAL_CHARS);
 $searchDate = filter_input(INPUT_GET, 'travel_date', FILTER_SANITIZE_SPECIAL_CHARS) ?? date('Y-m-d');
@@ -73,8 +67,6 @@ if ($searchPerformed) {
         $_SESSION['error'] = "Could not perform search. Database error.";
     }
 }
-
-// --- 3. Message Handling (from index.php logic) ---
 $message = ''; $messageType = '';
 if (isset($_SESSION['error'])) {
     $message = $_SESSION['error']; $messageType = 'bg-red-100 text-red-700 border-red-400';
@@ -281,20 +273,17 @@ if (isset($_SESSION['error'])) {
                 tab.addEventListener('click', () => {
                     const targetId = tab.dataset.target;
 
-                    // Deactivate all tabs and hide all content
                     tabs.forEach(t => {
                         t.classList.remove('text-indigo-600', 'border-indigo-500');
                         t.classList.add('text-gray-500', 'border-transparent');
                     });
                     contents.forEach(c => c.classList.add('hidden'));
 
-                    // Activate the clicked tab and show the target content
                     tab.classList.remove('text-gray-500', 'border-transparent');
                     tab.classList.add('text-indigo-600', 'border-indigo-500');
                     document.getElementById(targetId).classList.remove('hidden');
                 });
             });
-            // Ensure the search tab is active on load
             document.getElementById('tab-search').click();
         });
     </script>

@@ -1,22 +1,17 @@
 <?php
-// /public/dashboard_admin.php
 require_once '../app/config.php';
 $pdo = connectDB();
-// Enforce security: only logged-in admins can view this page
 checkAuth('admin'); 
 
 $adminName = $_SESSION['username']; 
 
-// Fetch Global KPIs
 $totalUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
 $totalCompanies = $pdo->query("SELECT COUNT(*) FROM companies")->fetchColumn();
 $totalBookingsMonth = $pdo->query("SELECT COUNT(*) FROM bookings WHERE booking_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)")->fetchColumn();
 $totalRevenue = $pdo->query("SELECT SUM(sch.price) FROM bookings b JOIN schedules sch ON b.schedule_id = sch.id")->fetchColumn();
 
-// Fetch System Users
 $systemUsers = $pdo->query("SELECT id, username, email, role FROM users ORDER BY id DESC")->fetchAll();
 
-// Fetch Companies
 $companiesList = $pdo->query("
     SELECT c.id, c.company_name, c.status, 
            (SELECT COUNT(*) FROM buses WHERE company_id = c.id) as fleet_size 
@@ -24,7 +19,6 @@ $companiesList = $pdo->query("
     ORDER BY c.status DESC, c.id DESC
 ")->fetchAll();
 
-// Fetch Recent Activities (limited to 10)
 $activities = $pdo->query("
     SELECT id, role, action, timestamp 
     FROM activity_log 

@@ -1,19 +1,9 @@
 <?php
-// /public/index.php
-// This is the entry point for all users (guests, users, companies, admins).
-
-// 1. Load Configuration and Security Functions
-// The '..' is correct because this file is in /public and needs to go up to /Vehicle-tracking-system
-// to access the /app folder.
 require_once '../app/config.php'; 
-
-// 2. Check if the user is already logged in
 if (isset($_SESSION['logged_in'])) {
-    // If logged in, redirect them immediately to their specific dashboard
     redirectUser($_SESSION['role']);
 }
 
-// 3. Handle System Messages (Error/Success)
 $message = '';
 $messageType = '';
 
@@ -124,7 +114,6 @@ if (isset($_SESSION['error'])) {
     </div>
 
 <script>
-    // --- JavaScript for Tab Switching ---
     document.getElementById('login-tab-btn').addEventListener('click', function() {
         document.getElementById('login-form').classList.remove('hidden');
         document.getElementById('register-form').classList.add('hidden');
