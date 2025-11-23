@@ -1,20 +1,12 @@
 <?php
-// /app/config.php
-
-// 1. Session Management
 if (session_status() == PHP_SESSION_NONE) {
     session_start();
 }
-
-// 2. Database Constants
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'rwanda_bus_booking');
 define('DB_USER', 'root');
-// FIX: Using an empty password for default XAMPP MySQL root user.
 define('DB_PASS', ''); 
 
-/**
- * Creates and returns a secure PDO database connection object.
  * @return PDO
  */
 function connectDB() {
@@ -28,15 +20,12 @@ function connectDB() {
         $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         return $pdo;
     } catch (\PDOException $e) {
-        // Log the error for security and debugging
         error_log("Database connection failed: " . $e->getMessage());
         die("System error: Database connection failed.");
     }
 }
 
-// 3. Redirection Helper
 function redirectUser($role) {
-    // This is the correct relative path for files inside /app to reach /public dashboards
     switch ($role) {
         case 'admin':
             header('Location: ../public/dashboard_admin.php');
@@ -51,10 +40,8 @@ function redirectUser($role) {
     }
     exit();
 }
-// Function to check if a user is logged in
 function checkAuth($requiredRole = null) {
     if (!isset($_SESSION['logged_in'])) {
-        // Redirects to the index.php in the public folder
         header('Location: index.php'); 
         exit();
     }
