@@ -1,4 +1,5 @@
 <?php
+// /public/dashboard_company.php
 require_once '../app/config.php';
 $pdo = connectDB();
 checkAuth('company'); 
@@ -10,14 +11,16 @@ $fleet = [];
 $schedules = [];
 $routesList = [];
 
+// --- 1. Fetch Company Information and ID ---
 try {
     $stmt = $pdo->prepare("SELECT id, company_name, status FROM companies WHERE user_id = ?");
     $stmt->execute([$companyUserId]);
     $companyInfo = $stmt->fetch();
     
     if (!$companyInfo || $companyInfo['status'] !== 'Active') {
+        // Handle pending/inactive status
         $_SESSION['error'] = "Your company account is currently **" . htmlspecialchars($companyInfo['status'] ?? 'Pending') . "**. Access to management features is restricted.";
-        header('Location: ../public/index.php');
+        header('Location: ../public/index.php'); // Redirect away from dashboard
         exit();
     }
     $companyId = $companyInfo['id'];
@@ -28,6 +31,7 @@ try {
     exit();
 }
 
+// --- 2. Calculate Real-Time Metrics (Existing Logic) ---
 $totalFleet = $pdo->query("SELECT COUNT(id) FROM buses WHERE company_id = $companyId")->fetchColumn();
 $todayDate = date('Y-m-d');
 $todayTicketsSold = $pdo->query("
@@ -46,7 +50,9 @@ $todayRevenue = $pdo->query("
     WHERE bus.company_id = $companyId AND DATE(b.booking_time) = '$todayDate'
 ")->fetchColumn() ?? 0;
 
-$fleet = $pdo->query("SELECT id, bus_name, license_plate, total_seats FROM buses WHERE company_id = $companyId ORDER BY bus_name")->fetchAll();
+// --- 3. Fetch Fleet, Routes, and Schedules ---
+// NOTE: We assume you have added a 'bus_type' column to your 'buses' table (e.g., VARCHAR)
+$fleet = $pdo->query("SELECT id, bus_name, license_plate, total_seats, bus_type FROM buses WHERE company_id = $companyId ORDER BY bus_name")->fetchAll();
 $schedules = $pdo->query("
     SELECT 
         sch.id, sch.departure_time, sch.price, 
@@ -59,6 +65,8 @@ $schedules = $pdo->query("
 ")->fetchAll();
 $routesList = $pdo->query("SELECT id, departure_city, arrival_city FROM routes ORDER BY departure_city")->fetchAll();
 
+
+// --- 4. Message Handling (Error/Success) ---
 $message = ''; $messageType = '';
 if (isset($_SESSION['error'])) {
     $message = $_SESSION['error']; $messageType = 'bg-red-100 text-red-700 border-red-400';
@@ -66,6 +74,18 @@ if (isset($_SESSION['error'])) {
 } elseif (isset($_SESSION['success'])) {
     $message = $_SESSION['success']; $messageType = 'bg-green-100 text-green-700 border-green-400';
     unset($_SESSION['success']);
+}
+
+/**
+ * Function to determine the image URL based on bus type
+ * @param string $type The bus type ('Bus' or 'Coaster')
+ * @return string The relative path to the image
+ */
+function getBusImage($type) {
+    if (strcasecmp($type, 'Coaster') === 0) {
+        return '../public/images/bus_coaster.jpg'; // Path to the Coaster image
+    }
+    return '../public/images/bus_standard.jpg'; // Default path for a large bus
 }
 ?>
 
@@ -142,6 +162,15 @@ if (isset($_SESSION['error'])) {
                     <input type="hidden" name="company_id" value="<?php echo htmlspecialchars($companyId); ?>">
                     
                     <div>
+                        <label for="bus_type" class="block text-sm font-medium text-gray-700">Vehicle Type</label>
+                        <select id="bus_type" name="bus_type" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white">
+                            <option value="">-- Select Type --</option>
+                            <option value="Bus">Standard Bus (Large)</option>
+                            <option value="Coaster">Coaster (Minibus)</option>
+                        </select>
+                    </div>
+
+                    <div>
                         <label for="bus_name" class="block text-sm font-medium text-gray-700">Bus Name (e.g., Kigali Express)</label>
                         <input type="text" id="bus_name" name="bus_name" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
                     </div>
@@ -170,14 +199,20 @@ if (isset($_SESSION['error'])) {
                 <?php if (count($fleet) > 0): ?>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <?php foreach ($fleet as $bus): ?>
-                            <div class="border rounded-lg p-4 bg-gray-50 shadow-sm flex justify-between items-center">
-                                <div>
-                                    <p class="text-lg font-bold text-gray-900"><?php echo htmlspecialchars($bus['bus_name']); ?></p>
-                                    <p class="text-sm text-gray-500"><?php echo htmlspecialchars($bus['license_plate']); ?></p>
-                                </div>
-                                <div class="text-right">
-                                    <p class="text-xl font-extrabold text-indigo-600"><?php echo htmlspecialchars($bus['total_seats']); ?></p>
-                                    <p class="text-xs text-gray-500">Seats</p>
+                            <div class="border rounded-lg p-4 bg-gray-50 shadow-sm flex flex-col">
+                                <img src="<?php echo getBusImage($bus['bus_type']); ?>" 
+                                     alt="<?php echo htmlspecialchars($bus['bus_type']); ?>" 
+                                     class="w-full h-24 object-cover rounded-md mb-3 border border-gray-200">
+
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-lg font-bold text-gray-900 leading-tight"><?php echo htmlspecialchars($bus['bus_name']); ?></p>
+                                        <p class="text-sm text-gray-500"><?php echo htmlspecialchars($bus['license_plate']); ?> (<?php echo htmlspecialchars($bus['bus_type']); ?>)</p>
+                                    </div>
+                                    <div class="text-right flex flex-col items-end">
+                                        <p class="text-xl font-extrabold text-indigo-600"><?php echo htmlspecialchars($bus['total_seats']); ?></p>
+                                        <p class="text-xs text-gray-500">Seats</p>
+                                    </div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
